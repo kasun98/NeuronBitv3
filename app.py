@@ -27,7 +27,7 @@ def predict():
     else:
         direction, predictions, accuracy, disdate = processor.update_data()
         predictions_html = predictions.to_html(classes='table table-bordered table-striped text-center', index=False)
-        # Process predictions and accuracy as needed
+        
         
         return render_template('predict.html', predictions=predictions_html, direction=direction, accuracy=accuracy, dis_date=disdate)
     

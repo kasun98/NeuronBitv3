@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import time
+import requests
 import datetime
 from datetime import date, datetime, timedelta
 from datetime import datetime
@@ -42,11 +43,19 @@ class DataProcessor:
             try:
                 data = get_data_func(*args)
                 if not data.empty:
+                    print('Data collected :) ')
                     return data
             except Exception as e:
-                pass
+                print('Fetch error!')
             time.sleep(timeout)
         return None
+    
+    def is_weekend(self, d):
+    # weekday() method returns 5 for Saturday and 6 for Sunday
+        if d.weekday() >= 5:
+            return 1
+        else:
+            return 0
     
     # Data getting functions
     def get_btcdata(self):
@@ -83,19 +92,39 @@ class DataProcessor:
             from_day = last_day.strftime("%d/%m/%Y")
             to_day = tday.strftime("%d/%m/%Y")
 
-            gold_data = investpy.get_commodity_historical_data(commodity='gold',
-                                                       from_date=from_day,
-                                                       to_date=to_day)
+            d1 = last_day + timedelta(days=1)
+            d2 = date.today()
+            if d1 == d2 and self.is_weekend(d1)==1 and self.is_weekend(d2)==1:
+                data_z = {
+                    'Date': [last_day, d1],
+                    'gold_price': self.df.iloc[-1]['gold_price'],
+                    'gold_open': self.df.iloc[-1]['gold_open'],
+                    'gold_high': self.df.iloc[-1]['gold_high'],
+                    'gold_low': self.df.iloc[-1]['gold_low'],
+                    'gold_change':self.df.iloc[-1]['gold_change']}
 
-            golddf = pd.DataFrame(gold_data)
-            golddf = golddf.drop(columns=['Volume','Currency'])
-            golddf = golddf.rename(columns={'Open':'gold_open','High':'gold_high','Low':'gold_low','Close':'gold_price'})
-            df2 = pd.DataFrame(golddf, columns=['gold_price', 'gold_open', 'gold_high', 'gold_low'])
-            df2.fillna(method='ffill')
-            df2.fillna(method='bfill')
-            df2['gold_change']=round(((df2['gold_price']-df2['gold_open'])/df2['gold_open'])*100, 2)
+                
+                df2 = pd.DataFrame(data_z)
+                df2['Date'] = pd.to_datetime(df2['Date'])
+                df2.set_index('Date', inplace=True)
 
-            return df2
+                return df2
+            else:
+
+
+                gold_data = investpy.get_commodity_historical_data(commodity='gold',
+                                                        from_date=from_day,
+                                                        to_date=to_day)
+
+                golddf = pd.DataFrame(gold_data)
+                golddf = golddf.drop(columns=['Volume','Currency'])
+                golddf = golddf.rename(columns={'Open':'gold_open','High':'gold_high','Low':'gold_low','Close':'gold_price'})
+                df2 = pd.DataFrame(golddf, columns=['gold_price', 'gold_open', 'gold_high', 'gold_low'])
+                df2.fillna(method='ffill')
+                df2.fillna(method='bfill')
+                df2['gold_change']=round(((df2['gold_price']-df2['gold_open'])/df2['gold_open'])*100, 2)
+
+                return df2
 
     def get_spdata(self):
         day = date.today() - timedelta(days=1)
@@ -107,20 +136,40 @@ class DataProcessor:
             from_day = last_day.strftime("%d/%m/%Y")
             to_day = tday.strftime("%d/%m/%Y")
 
-            sp500_data = investpy.get_index_historical_data(index='S&P 500',
-                                                    country='united states',
-                                                    from_date=from_day,
-                                                    to_date=to_day)
+            d1 = last_day + timedelta(days=1)
+            d2 = date.today()
+            if d1 == d2 and self.is_weekend(d1)==1 and self.is_weekend(d2)==1:
+                data_z = {
+                    'Date': [last_day, d1],
+                    'sp_price': self.df.iloc[-1]['sp_price'],
+                    'sp_open': self.df.iloc[-1]['sp_open'],
+                    'sp_high': self.df.iloc[-1]['sp_high'],
+                    'sp_low': self.df.iloc[-1]['sp_low'],
+                    'sp_change':self.df.iloc[-1]['sp_change']}
 
-            spdf = pd.DataFrame(sp500_data)
-            spdf = spdf.drop(columns=['Volume','Currency'])
-            spdf = spdf.rename(columns={'Open':'sp_open','High':'sp_high','Low':'sp_low','Close':'sp_price'})
-            df3 = pd.DataFrame(spdf, columns=['sp_price', 'sp_open', 'sp_high', 'sp_low'])
-            df3.fillna(method='ffill')
-            df3.fillna(method='bfill')
-            df3['sp_change']=round(((df3['sp_price']-df3['sp_open'])/df3['sp_open'])*100, 2)
+                
+                df3 = pd.DataFrame(data_z)
+                df3['Date'] = pd.to_datetime(df3['Date'])
+                df3.set_index('Date', inplace=True)
 
-            return df3
+                return df3
+            else:
+
+
+                sp500_data = investpy.get_index_historical_data(index='S&P 500',
+                                                        country='united states',
+                                                        from_date=from_day,
+                                                        to_date=to_day)
+
+                spdf = pd.DataFrame(sp500_data)
+                spdf = spdf.drop(columns=['Volume','Currency'])
+                spdf = spdf.rename(columns={'Open':'sp_open','High':'sp_high','Low':'sp_low','Close':'sp_price'})
+                df3 = pd.DataFrame(spdf, columns=['sp_price', 'sp_open', 'sp_high', 'sp_low'])
+                df3.fillna(method='ffill')
+                df3.fillna(method='bfill')
+                df3['sp_change']=round(((df3['sp_price']-df3['sp_open'])/df3['sp_open'])*100, 2)
+
+                return df3
 
     def get_us30data(self):
         day = date.today() - timedelta(days=1)
@@ -132,20 +181,40 @@ class DataProcessor:
             from_day = last_day.strftime("%d/%m/%Y")
             to_day = tday.strftime("%d/%m/%Y")
 
-            us30_data = investpy.get_index_historical_data(index='Dow 30',
-                                                   country='united states',
-                                                   from_date=from_day,
-                                                   to_date=to_day)
+            d1 = last_day + timedelta(days=1)
+            d2 = date.today()
+            if d1 == d2 and self.is_weekend(d1)==1 and self.is_weekend(d2)==1:
+                data_z = {
+                    'Date': [last_day, d1],
+                    'us30_price': self.df.iloc[-1]['us30_price'],
+                    'us30_open': self.df.iloc[-1]['us30_open'],
+                    'us30_high': self.df.iloc[-1]['us30_high'],
+                    'us30_low': self.df.iloc[-1]['us30_low'],
+                    'us30_change':self.df.iloc[-1]['us30_change']}
 
-            us30df = pd.DataFrame(us30_data)
-            us30df = us30df.drop(columns=['Volume','Currency'])
-            us30df = us30df.rename(columns={'Open':'us30_open','High':'us30_high','Low':'us30_low','Close':'us30_price'})
-            df4 = pd.DataFrame(us30df, columns=['us30_price', 'us30_open', 'us30_high', 'us30_low'])
-            df4.fillna(method='ffill')
-            df4.fillna(method='bfill')
-            df4['us30_change']=round(((df4['us30_price']-df4['us30_open'])/df4['us30_open'])*100, 2)
+                
+                df4 = pd.DataFrame(data_z)
+                df4['Date'] = pd.to_datetime(df4['Date'])
+                df4.set_index('Date', inplace=True)
 
-            return df4
+                return df4
+            else:
+
+
+                us30_data = investpy.get_index_historical_data(index='Dow 30',
+                                                    country='united states',
+                                                    from_date=from_day,
+                                                    to_date=to_day)
+
+                us30df = pd.DataFrame(us30_data)
+                us30df = us30df.drop(columns=['Volume','Currency'])
+                us30df = us30df.rename(columns={'Open':'us30_open','High':'us30_high','Low':'us30_low','Close':'us30_price'})
+                df4 = pd.DataFrame(us30df, columns=['us30_price', 'us30_open', 'us30_high', 'us30_low'])
+                df4.fillna(method='ffill')
+                df4.fillna(method='bfill')
+                df4['us30_change']=round(((df4['us30_price']-df4['us30_open'])/df4['us30_open'])*100, 2)
+
+                return df4
 
     def get_usdidxdata(self):
         day = date.today() - timedelta(days=1)
@@ -157,20 +226,40 @@ class DataProcessor:
             from_day = last_day.strftime("%d/%m/%Y")
             to_day = tday.strftime("%d/%m/%Y")
 
-            usdidx_data = investpy.get_index_historical_data(index='US Dollar Index',
-                                                   country='united states',
-                                                   from_date=from_day,
-                                                   to_date=to_day)
+            d1 = last_day + timedelta(days=1)
+            d2 = date.today()
+            if d1 == d2 and self.is_weekend(d1)==1 and self.is_weekend(d2)==1:
+                data_z = {
+                    'Date': [last_day, d1],
+                    'usidx_price': self.df.iloc[-1]['usidx_price'],
+                    'usidx_open': self.df.iloc[-1]['usidx_open'],
+                    'usidx_high': self.df.iloc[-1]['usidx_high'],
+                    'usidx_low': self.df.iloc[-1]['usidx_low'],
+                    'usidx_change':self.df.iloc[-1]['usidx_change']}
 
-            usdidxdf = pd.DataFrame(usdidx_data)
-            usdidxdf = usdidxdf.drop(columns=['Volume','Currency'])
-            usdidxdf = usdidxdf.rename(columns={'Open':'usidx_open','High':'usidx_high','Low':'usidx_low','Close':'usidx_price'})
-            df5 = pd.DataFrame(usdidxdf, columns=['usidx_price', 'usidx_open', 'usidx_high', 'usidx_low'])
-            df5.fillna(method='ffill')
-            df5.fillna(method='bfill')
-            df5['usidx_change']=round(((df5['usidx_price']-df5['usidx_open'])/df5['usidx_open'])*100, 2)
+                
+                df5 = pd.DataFrame(data_z)
+                df5['Date'] = pd.to_datetime(df5['Date'])
+                df5.set_index('Date', inplace=True)
 
-            return df5
+                return df5
+            else:
+
+
+                usdidx_data = investpy.get_index_historical_data(index='US Dollar Index',
+                                                    country='united states',
+                                                    from_date=from_day,
+                                                    to_date=to_day)
+
+                usdidxdf = pd.DataFrame(usdidx_data)
+                usdidxdf = usdidxdf.drop(columns=['Volume','Currency'])
+                usdidxdf = usdidxdf.rename(columns={'Open':'usidx_open','High':'usidx_high','Low':'usidx_low','Close':'usidx_price'})
+                df5 = pd.DataFrame(usdidxdf, columns=['usidx_price', 'usidx_open', 'usidx_high', 'usidx_low'])
+                df5.fillna(method='ffill')
+                df5.fillna(method='bfill')
+                df5['usidx_change']=round(((df5['usidx_price']-df5['usidx_open'])/df5['usidx_open'])*100, 2)
+
+                return df5
 
 
     def RSI(self, close, period=14):
@@ -187,20 +276,19 @@ class DataProcessor:
         
         if date.today() > self.latest_predicted_date_update:
             print(date.today())
-            print(self.latest_predicted_date_update)
-            
             
             print('Data collection and transformation started...')
+            print('Stage 1 ...')
             df1 = self.fetch_data(self.get_btcdata)
-            print('Stage 1 completed...')
+            print('Stage 2 ...')
             df2 = self.fetch_data(self.get_golddata)
-            print('Stage 2 completed...')
+            print('Stage 3 ...')
             df3 = self.fetch_data(self.get_spdata)
-            print('Stage 3 completed...')
+            print('Stage 4 ...')
             df4 = self.fetch_data(self.get_us30data)
-            print('Stage 4 completed...')
+            print('Stage 5 ...')
             df5 = self.fetch_data(self.get_usdidxdata)
-            print('Stage 5 completed...')
+            
 
             if all(df is not None for df in [df1, df2, df3, df4, df5]):
                 print('Data collection process completed...')
@@ -234,6 +322,7 @@ class DataProcessor:
                 predictions = loaded_model.predict(last_10_rows_values)
                 y_pred_binary = np.round(predictions).astype(int)
                 accuracy_last_9 = accuracy_score(last_9_test, y_pred_binary[:-1])*100
+                accuracy_last_9 = np.round(accuracy_last_9, 1)
                 direction = y_pred_binary[-1][0]
 
                 #for table
@@ -275,6 +364,7 @@ class DataProcessor:
             y_pred_binary = np.round(predictions).astype(int)
             
             accuracy_last_9 = accuracy_score(last_9_test, y_pred_binary[:-1])*100
+            accuracy_last_9 = np.round(accuracy_last_9, 1)
             direction = y_pred_binary[-1][0]
 
             #for table
@@ -303,6 +393,17 @@ class DataProcessor:
 
         return accuracy_updated
     
+    def get_btc_price(self):
+        url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"
+        response = requests.get(url)
+        if response.status_code == 200:
+            data = response.json()
+            btc_price = data["bitcoin"]["usd"]
+            return btc_price
+        else:
+            print("Failed to fetch data")
+            return None
+        
 
 
 

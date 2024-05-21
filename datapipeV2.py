@@ -321,16 +321,34 @@ class DataProcessor:
 
                 loaded_model = load_model(self.model_path)
                 predictions = loaded_model.predict(last_10_rows_values)
-                y_pred_binary = np.round(predictions).astype(int)
-                accuracy_last_9 = accuracy_score(last_9_test, y_pred_binary[:-1])*100
+                y_pred_binary = np.round(predictions).astype(int).flatten()
+
+                direction = y_pred_binary[-1]
+                print('Getting direction...')
+
+                #updating predicted results
+                newdff = pd.read_csv(self.predict_file)
+                new_dff = pd.DataFrame({'Date': pd.to_datetime(newdff['Date'][-10:]),  'pred': y_pred_binary})
+                existing_df = pd.read_csv(self.pred_results, index_col='Date', parse_dates=True)
+                combined_dff = pd.concat([existing_df, new_dff.set_index('Date')])
+                # Drop duplicate index rows, keeping only the first occurrence
+                combined_dff = combined_dff[~combined_dff.index.duplicated(keep='first')]
+                # Save the combined DataFrame back to the CSV file
+                combined_dff.to_csv(self.pred_results)
+                print('Updated predictions...')
+
+                #accuracy
+                last_preds = combined_dff['pred'][-10:-1].values
+                accuracy_last_9 = accuracy_score(last_9_test, last_preds)*100
                 accuracy_last_9 = np.round(accuracy_last_9, 1)
-                direction = y_pred_binary[-1][0]
+                print('Getting accuracy of last 10 days...')
 
                 #for table
                 dates = new_df.index[1:10].tolist()
-                predicted = y_pred_binary[:-1]
+                predicted = last_preds
                 actual = last_9_test
-                predicted_flat = predicted.flatten()
+                predicted_flat = predicted #.flatten()
+                print('Loading table...')
                 df_table = pd.DataFrame({'Date': dates, 'Prediction': predicted_flat, 'Actual': actual})
                 # Map numeric values to corresponding categories
                 df_table['Prediction'] = df_table['Prediction'].map({0: 'Fall', 1: 'Rise'})
@@ -357,22 +375,22 @@ class DataProcessor:
             latest_data.set_index('Date', inplace=True)
             price_data = pd.read_csv(self.data_file)
             price_data.set_index('Date', inplace=True)
+            pred_df = pd.read_csv(self.pred_results)
+            pred_df.set_index('Date', inplace=True)
 
-            last_10_rows_values = latest_data.iloc[-10:][self.columns_of_interest].values
+
+
+            last_preds = pred_df['pred'][-10:-1].values
             last_9_test = price_data.iloc[-9:]['direction'].values
-            loaded_model = load_model(self.model_path)
-            predictions = loaded_model.predict(last_10_rows_values)
-            y_pred_binary = np.round(predictions).astype(int)
-            
-            accuracy_last_9 = accuracy_score(last_9_test, y_pred_binary[:-1])*100
+            accuracy_last_9 = accuracy_score(last_9_test, last_preds)*100
             accuracy_last_9 = np.round(accuracy_last_9, 1)
-            direction = y_pred_binary[-1][0]
+            direction = pred_df['pred'][-1]
 
             #for table
             dates = latest_data.index[1:10].tolist()
-            predicted = y_pred_binary[:-1]
+            predicted = pred_df['pred'][-10:-1].values
             actual = last_9_test
-            predicted_flat = predicted.flatten()
+            predicted_flat = predicted #.flatten()
             df_table = pd.DataFrame({'Date': dates, 'Prediction': predicted_flat, 'Actual': actual})
             # Map numeric values to corresponding categories
             df_table['Prediction'] = df_table['Prediction'].map({0: 'Fall', 1: 'Rise'})

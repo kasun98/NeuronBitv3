@@ -11,11 +11,12 @@ from tensorflow.keras.models import load_model
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report, roc_auc_score
 
 class DataProcessor:
-    def __init__(self, data_file='data/processed_datav2.csv', predict_file='data/to_predict.csv', model_path='models/dnn.h5', latest_accuracy='data/latest_accuracy.csv'):
+    def __init__(self, data_file='data/processed_datav2.csv', predict_file='data/to_predict.csv', model_path='models/dnn.h5', latest_accuracy='data/latest_accuracy.csv', pred_results = 'data/predicted_results.csv'):
         self.data_file = data_file
         self.predict_file = predict_file
         self.model_path = model_path
         self.latest_accuracy = latest_accuracy
+        self.pred_results = pred_results
 
 
         self.df = pd.read_csv(data_file)

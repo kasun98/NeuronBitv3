@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, redirect, url_for
 from datapipeV2 import DataProcessor
 import json
 import pandas as pd
@@ -25,12 +25,17 @@ def predict():
         return render_template('predict.html', accuracy=accuracy)
     
     else:
-        direction, predictions, accuracy, disdate = processor.update_data()
-        predictions_html = predictions.to_html(classes='table table-bordered table-striped text-center', index=False)
+        try:
+            direction, predictions, accuracy, disdate = processor.update_data()
+            predictions_html = predictions.to_html(classes='table table-bordered table-striped text-center', index=False)
+            return render_template('predict.html', predictions=predictions_html, direction=direction, accuracy=accuracy, dis_date=disdate)
+        except Exception as e:
+            return redirect(url_for('error'))
         
-        
-        return render_template('predict.html', predictions=predictions_html, direction=direction, accuracy=accuracy, dis_date=disdate)
-    
+@app.route('/error')
+def error():
+    return render_template('error.html')
+
 
 @app.route('/price', methods=['GET'])
 def price():
